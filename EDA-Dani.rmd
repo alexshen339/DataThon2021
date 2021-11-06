@@ -9,20 +9,38 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Reading In Data
+## Tryin for loops
+```{r}
+data_merge1<-read.spss("data/W1 Merged Data/Wave.1_Data/Merge/Wave1_20170906.sav", to.data.frame=TRUE)
 
+data_merge1 <- data_merge1%>%
+select(se002, se005, se009, country, q007, q008, q009, q010, q006, q098, q128, q005, q027, q105, q106, q123, q127)
+```
+```{r}
+# needed for glmnet x/y notation
+iris.x <- as.matrix(iris[1:2])
+iris.y <- as.matrix(iris[5])
+
+# fitting via glmnet
+mod.glmnet <- glmnet::glmnet(
+    x = iris.x, y = iris.y,
+    family = "multinomial",
+    lambda = 0,
+    type.multinomial = "grouped"
+)
+
+
+```
 
 
 ```{r cars}
-summary(cars)
+data_merge1
+x <- model.matrix(q106~.,data_merge1)[,-1]
+y <- data_merge[,1] #Finding optimal lambda shrinkage value to reduce error through cross validation
+set.seed(123)
+cv.lasso <- cv.glmnet(x, y, alpha = 1, family = "binomial") #Creation of lasso model and outputting regression coefficients
+lasso_model <- glmnet(x, y, alpha = 1, family = "binomial",
+lambda = cv.lasso$lambda.min)
+coef(lasso_model)
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

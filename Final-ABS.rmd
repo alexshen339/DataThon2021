@@ -9,7 +9,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction: 
 What question are you answering with the data, and why is it important?
-After looking through the questions decided 
+After looking through the questions, we decided that in the time given, we should focus on building a model that can predict q106 which asks if the respondent thinks everyone is treated equally by the government. We believe this question is very important in order to gauge how safe respondents feel in their governments
 
 ##Prior Work/Literature Review: 
 What is the current literature in this area in a few sentences regarding references that you're utilizing. It's important to cite any work that you are using if it's not your own proposal as this is best practice.
