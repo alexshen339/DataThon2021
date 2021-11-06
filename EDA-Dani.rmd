@@ -11,36 +11,167 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Tryin for loops
 ```{r}
+library(tidyverse)
+library(foreign)
 data_merge1<-read.spss("data/W1 Merged Data/Wave.1_Data/Merge/Wave1_20170906.sav", to.data.frame=TRUE)
 
+#data_merge1 <- data_merge1%>%
+#select(se002, se005, se009, country, q007, q008, q009, q010, q006, q098, q128, q005, q027, q105, q106, q123, q127)
 data_merge1 <- data_merge1%>%
-select(se002, se005, se009, country, q007, q008, q009, q010, q006, q098, q128, q005, q027, q105, q106, q123, q127)
+select(se002, se005, se009, country, q106, q007, q006)
+data_merge1
 ```
 ```{r}
-# needed for glmnet x/y notation
-iris.x <- as.matrix(iris[1:2])
-iris.y <- as.matrix(iris[5])
 
-# fitting via glmnet
-mod.glmnet <- glmnet::glmnet(
-    x = iris.x, y = iris.y,
-    family = "multinomial",
-    lambda = 0,
-    type.multinomial = "grouped"
-)
+# needed for glmnet x/y notation
+#merge.x <- as.matrix(data_merge1 %>% select(-q106))
+#iris.x
+# iris.y <- as.matrix(iris[5])
+# 
+# # fitting via glmnet
+# mod.glmnet <- glmnet::glmnet(
+#     x = iris.x, y = iris.y,
+#     family = "multinomial",
+#     lambda = 0,
+#     type.multinomial = "grouped"
+# )
 
 
 ```
 
 
 ```{r cars}
+library(glmnet)
+data_merge1<- na.omit(data_merge1)
 data_merge1
-x <- model.matrix(q106~.,data_merge1)[,-1]
-y <- data_merge[,1] #Finding optimal lambda shrinkage value to reduce error through cross validation
+merge.x <- as.matrix(data_merge1 %>% select(-q106))
+x <- model.matrix( q106~ ., data_merge1)
+y <- data_merge1$q106 #Finding optimal lambda shrinkage value to reduce error through cross validation
 set.seed(123)
-cv.lasso <- cv.glmnet(x, y, alpha = 1, family = "binomial") #Creation of lasso model and outputting regression coefficients
-lasso_model <- glmnet(x, y, alpha = 1, family = "binomial",
-lambda = cv.lasso$lambda.min)
-coef(lasso_model)
+print(49)
+cv.lasso <- cv.glmnet(x, y, alpha =1, family = "multinomial") #Creation of lasso model and outputting regression coefficients
+print(cv.lasso$lambda.min)
+lasso_model <- glmnet(x, y, alpha = 1, family = "multinomial",
+  lambda = cv.lasso$lambda.min)
+length(x)/length(y)
+
+```
+# Leah's work!
+## Load libraries
+```{r}
+library(tidyverse)
+library(dplyr)
+library(foreign)
+library(stringr)
+library(knitr)
 ```
 
+```{r}
+merge <- read.spss("data/W1 Merged Data/Wave.1_Data/Merge/Wave1_20170906.sav",
+                  to.data.frame=TRUE)
+```
+## EDA
+###---- Subset for key vars
+```{r}
+merge <- merge %>% select(se002, se004, se005, se009, se003a, country, q007, q008, q009, q010, q006, q098, q128, q005, q027, q028, q105, q106, q121, q123, q127)
+#glimpse(merge)
+```
+###--- table of missing values
+```{r}
+n <- length(merge %>% colnames())
+missing_vec <- numeric(n)
+for (i in 1:n) {
+  nrow <- merge %>% select(colnames(merge)[i]) %>% filter(is.na((merge)[i])) %>% nrow()
+  missing_vec[i] <- nrow
+}
+missing_vec
+#merge %>% select(colnames(merge)[2]) %>% filter(is.na((merge)[2])) %>% nrow()
+```
+```{r}
+#data frame
+NA_table <- data.frame(colnames(merge), missing_vec)
+kable(NA_table, col.names = c("Variable", "Number of NA"), caption = "Table of NA values")
+```
+###--- Table of country breakdown
+```{r}
+country_percs <- merge %>% count(country) %>% mutate(perc = round(n / sum(n) * 100, digits = 3))
+country_percs <- country_percs %>% arrange(perc) %>% select(-n)
+kable(country_percs, col.names = c("Country", "Percent of Respondents"), caption = "Survey Respondents: Breakdown by Country" )
+```
+###--- Visualize Q106
+```{r}
+#Visualize key response var
+ggplot(data = merge, mapping = aes(x = q106, fill = q106)) +
+  geom_bar() +
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) + labs(title = "Is everyone treated equally by the government?") +
+  xlab("Responses") +
+  ylab("Number of Responses") +
+  labs(fill="")
+```
+###--- Visualize Q106 by country
+```{r}
+#Visualize key response var by country
+ggplot(data = merge, mapping = aes(x = q106, fill = q106)) +
+  geom_bar() +
+  facet_wrap("country") +
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) + labs(title = "Q106: Response by Country") +
+  labs(fill = "") +
+  ylab("Number of responses") +
+  xlab("")
+```
+###---- gender vs answer to Q106
+```{r}
+merge_subg <- merge %>% drop_na(se002) %>%
+  arrange(se002)
+ggplot(data = merge_subg, mapping = aes(x = q106, fill = q106)) +
+  geom_bar() +
+  facet_wrap("se002") +
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) + labs(title = "Q106: Response by Gender") +
+  labs(fill = "") +
+  ylab("") +
+  xlab("")
+```
+###---- income vs answer to Q106
+```{r}
+merge_subi <- merge %>% drop_na(se009) %>%
+  arrange(se009)
+ggplot(data = merge_subi, mapping = aes(x = q106, fill = q106)) +
+  geom_bar() +
+  facet_wrap("se009") +
+  theme(axis.text.x=element_blank(),
+      axis.ticks.x=element_blank()) + labs(title = "Q106: Response by Income Level") +
+  labs(fill = "") +
+  ylab("Number of responses") +
+  xlab("")
+```
+###---- age vs answer to Q106
+```{r}
+merge_sub <- merge %>% drop_na(se003a) %>%
+  mutate(se003a = as.numeric(se003a)) %>%
+  mutate(age_range = case_when(se003a <= 18 ~ "Under 18",
+                               se003a > 18 & se003a <= 25 ~ "18-25",
+                               se003a > 25 & se003a <= 50  ~ "25-50",
+                               se003a > 50 & se003a <= 75  ~ "50-75",
+                               se003a > 75 ~ "above 75")) %>%
+  arrange(age_range)
+merge_sub <- merge_sub %>% 
+  mutate(age_range = factor(age_range, levels = c("Under 18", "18-25", "25-50","50-75", .))) %>%
+  arrange(age_range)
+ggplot(data = merge_sub, mapping = aes(x = q106, fill = age_range)) +
+  geom_bar(position = "fill") +
+  theme(axis.ticks.x=element_blank(),
+        axis.text.x = element_text(angle = 25)) +
+  labs(title = "Is everyone treated equally by the government?", x= "Response", y= "Count")
+```
+
+
+```{r}
+table <- merge %>% group_by(country) %>% count(q106) %>% summarize(percent = round(n/sum(n)*100, digits =3), 'Q106 Response' = q106)
+table
+table %>% colnames()
+newtble <- pivot_wider(table, names_from = country, values_from = percent)
+kable(newtble, caption = "Percent breakdown of response to variable of interest")
+```
