@@ -7,6 +7,17 @@ output: pdf_document
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
+```{r, message=FALSE}
+library(foreign)
+library(tidyverse)
+library(DMwR2)
+library(e1071)
+library(glmnet)
+library(knitr)
+merge <- read.spss("data/W1 Merged Data/Wave.1_Data/Merge/Wave1_20170906.sav",
+                  to.data.frame=TRUE)
+```
+
 ## Introduction: 
 
 After looking through the questions, we decided that in the time given, we should focus on building a model that can predict q106, which asks if the respondent thinks equal treatment of citizens by their government has gotten better or worse. We believe this question is important in order to compare how different respondents have viewed trends towards a "better" government system in their country. For instance, it's possible that a perception of positive trends is strongly correlated with a specific country or demographic group, indicating targeted improvements in equality. Alternatively, if perceptions of unequal treatment are strong correlated with certain groups, these groups may have been disproportionately "left out" of recent progress. 
@@ -29,6 +40,33 @@ What are the main method(s) that you are using and why? Be sure to choose method
 
 ##Analysis: 
 Analyze your data and provide evaluations. What do you find (include visualization if helpful).
+```{r, echo=TRUE}
+data_merge1 <- merge%>%
+   select(se002, se005, se009, country, q027, q105, q106)
+
+data_merge1 <- data_merge1%>% 
+  drop_na() 
+
+
+data_merge1 <- data_merge1%>% 
+   mutate(q106 = case_when(q106=="Much worse" ~ 0,
+                           q106=="Somewhat worse" ~ 0,
+                           q106=="Much the same" ~ 0,
+                           q106=="Somewhat better" ~ 1,
+                           q106=="Much better than before" ~ 1,))
+x <- model.matrix(q106~.,data_merge1)[,-1]
+
+y <- data_merge1$q106
+#Finding optimal lambda shrinkage value to reduce error through cross validation
+set.seed(123)
+cv.lasso <- cv.glmnet(x, y, alpha = 1, family = "binomial")
+#Creation of lasso model and outputting regression coefficients
+lasso_model <- glmnet(x, y, alpha = 1, family = "binomial",
+lambda = cv.lasso$lambda.min)
+coef(lasso_model)
+cv.lasso$lambda.min
+```
+We decided to transform our response variable q106 into two different categories. "Much worse," "Somewhat worse," "Much the same," were encoded as 0, and "Somewhat better, "Much better than before" were encoded as 1. As a result, our goal is to predict if trends in the equal treatment of citizens has gotten worse/stayed the same, or gotten better. We decided to drop all NA's from the dataframe. We considered using KNN to impute missing values, but we thought the missing data may have a systematic pattern, as seen in Table 5 in Appendix. We then decided to fit a lasso regression in order to decrease the variance of our model and also perform variable selection. 
 
 ##Conclusion: 
 What can you conclude from your analysis and how is this useful regarding the motivating question.
@@ -129,7 +167,7 @@ ggplot(data = merge_sub, mapping = aes(x = q106, fill = age_range)) +
   labs(title = "Is everyone treated equally by the government?", x= "Response", y= "Count")
 ```
 
-
+### Table 5- age vs answer to Q106
 ```{r, echo=TRUE, message= FALSE}
 table <- merge %>% group_by(country) %>% count(q106) %>% summarize(percent = round(n/sum(n)*100, digits =3), 'Q106 Response' = q106)
 # table
