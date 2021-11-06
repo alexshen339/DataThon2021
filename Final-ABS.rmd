@@ -36,7 +36,10 @@ After visualizing the breakdown of responses to our variable of interest by age 
 After visualizing our variable of interest (Graph 1), we determined that there were a good number of observations for each category of our response variable. This allowed us to proceed with putting together a multinomial lasso model. 
 
 ## Proposed Methodology:
-What are the main method(s) that you are using and why? Be sure to choose methods that are statistically appropriate for the data. State any assumptions and why they are valid.
+
+We decided to transform our response variable q106 into two different categories. "Much worse," "Somewhat worse," "Much the same," were encoded as 0, and "Somewhat better, "Much better than before" were encoded as 1. As a result, our goal is to predict if trends in the equal treatment of citizens has gotten worse/stayed the same, or gotten better. We decided to drop all NA's from the dataframe. We considered using KNN to impute missing values, but we thought the missing data may have a systematic pattern, as seen in the Table 1, and the large amount of missing values were computationally expensive to fit given the number of dimensions. 
+
+We then decided to fit a logistic lasso regression in order to decrease the variance of our model and also perform variable selection. Shrinkage of the coefficients also may help with multicollinearity in the model. We used cross validation to find the optimal lambda shrinkage parameter, and used that as the lambda parameter in our final model. 
 
 ## Analysis: 
 Analyze your data and provide evaluations. What do you find (include visualization if helpful).
@@ -66,13 +69,13 @@ lambda = cv.lasso$lambda.min)
 coef(lasso_model)
 cv.lasso$lambda.min
 ```
-We decided to transform our response variable q106 into two different categories. "Much worse," "Somewhat worse," "Much the same," were encoded as 0, and "Somewhat better, "Much better than before" were encoded as 1. As a result, our goal is to predict if trends in the equal treatment of citizens has gotten worse/stayed the same, or gotten better. We decided to drop all NA's from the dataframe. We considered using KNN to impute missing values, but we thought the missing data may have a systematic pattern, as seen in Table 5 in Appendix. We then decided to fit a lasso regression in order to decrease the variance of our model and also perform variable selection. 
 
 ## Conclusion: 
-What can you conclude from your analysis and how is this useful regarding the motivating question.
+
+Given more time, we would like to explore more interaction effects. In addition, we would also include Wave2 as a predictor variable and merge in the Wave2 data. Also, another thing we want to consider is the handling of missing data. Part of the reason we didn't use certain predictors, for example age, is because certain countries did not report them at all. We were wondering if there was a better way to fix this problem. Plenty of other observations had missing values as well, so we wanted to find a statistically sound way to impute them. Finally, we wanted to find other models that might fit well. For example, we fit a SVM but scrapped it because we were not sure about performing proper variable selection with SVM's. In addition, we would have liked to implement decision trees since they can handle categorical predictors and responses really well. 
 
 ## Appendix
-```{r}
+```{r, include=FALSE}
 merge <- merge %>% select(se002, se004, se005, se009, se003a, country, q007, q008, q009, q010, q006, q098, q128, q005, q027, q028, q105, q106, q121, q123, q127)
 #glimpse(merge)
 ```
@@ -87,19 +90,19 @@ for (i in 1:n) {
 missing_vec
 #merge %>% select(colnames(merge)[2]) %>% filter(is.na((merge)[2])) %>% nrow()
 ```
-```{r, echo=TRUE}
+```{r}
 #data frame
 NA_table <- data.frame(colnames(merge), missing_vec)
 kable(NA_table, col.names = c("Variable", "Number of NA"), caption = "Table of NA values")
 ```
 ### Table 2- Table of country breakdown
-```{r, echo=TRUE}
+```{r}
 country_percs <- merge %>% count(country) %>% mutate(perc = round(n / sum(n) * 100, digits = 3))
 country_percs <- country_percs %>% arrange(perc) %>% select(-n)
 kable(country_percs, col.names = c("Country", "Percent of Respondents"), caption = "Survey Respondents: Breakdown by Country" )
 ```
 ### Graph 1- Visualize Q106
-```{r , echo=TRUE}
+```{r }
 #Visualize key response var
 ggplot(data = merge, mapping = aes(x = q106, fill = q106)) +
   geom_bar() +
@@ -109,8 +112,10 @@ ggplot(data = merge, mapping = aes(x = q106, fill = q106)) +
   ylab("Number of Responses") +
   labs(fill="")
 ```
+
 ### Graph 2- Visualize Q106 by country
-```{r, echo=TRUE}
+
+```{r}
 #Visualize key response var by country
 ggplot(data = merge, mapping = aes(x = q106, fill = q106)) +
   geom_bar() +
@@ -121,8 +126,10 @@ ggplot(data = merge, mapping = aes(x = q106, fill = q106)) +
   ylab("Number of responses") +
   xlab("")
 ```
+
 ### Graph 3- Visualize Q106 by Gender
-```{r, echo=TRUE}
+
+```{r}
 merge_subg <- merge %>% drop_na(se002) %>%
   arrange(se002)
 ggplot(data = merge_subg, mapping = aes(x = q106, fill = q106)) +
@@ -134,8 +141,10 @@ ggplot(data = merge_subg, mapping = aes(x = q106, fill = q106)) +
   ylab("") +
   xlab("")
 ```
+
 ### Graph 4- Vizualize Q106 by Income
-```{r, echo=TRUE}
+
+```{r}
 merge_subi <- merge %>% drop_na(se009) %>%
   arrange(se009)
 ggplot(data = merge_subi, mapping = aes(x = q106, fill = q106)) +
@@ -147,8 +156,10 @@ ggplot(data = merge_subi, mapping = aes(x = q106, fill = q106)) +
   ylab("Number of responses") +
   xlab("")
 ```
+
 ### Graph 5- age vs answer to Q106
-```{r, echo=TRUE}
+
+```{r}
 merge_sub <- merge %>% drop_na(se003a) %>%
   mutate(se003a = as.numeric(se003a)) %>%
   mutate(age_range = case_when(se003a <= 18 ~ "Under 18",
@@ -168,7 +179,8 @@ ggplot(data = merge_sub, mapping = aes(x = q106, fill = age_range)) +
 ```
 
 ### Table 3- Response of Q106 by Country
-```{r, echo=TRUE, message= FALSE}
+
+```{r, message= FALSE}
 table <- merge %>% group_by(country) %>% count(q106) %>% summarize(percent = round(n/sum(n)*100, digits =3), 'Q106 Response' = q106)
 # table
 # table %>% colnames()
