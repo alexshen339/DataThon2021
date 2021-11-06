@@ -1,0 +1,40 @@
+---
+title: "AlexMerge"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(foreign)
+library(tidyverse)
+library(DMwR2)
+library(e1071)
+
+
+data_merge1<-read.spss("data/W1 Merged Data/Wave.1_Data/Merge/Wave1_20170906.sav", 
+                  to.data.frame=TRUE)
+
+data_merge1 <- data_merge1%>%
+  select(se002, se005, se009, se003a, country, q007, q008, q009, q010, q006, q098, q128, q005, q027, q028, q105, q106, q121, q123, q127)
+
+
+#data_merge1<- knnImputation(data_merge1, k = 10)
+#data_merge1
+
+
+data_merge2<-read.spss("data/W2 Merged Data/2w-3rd_release_all/merge/Wave2_20170724.sav", 
+                  to.data.frame=TRUE)
+data_merge2
+
+tune.out <- tune(svm, q106 ~ ., data = data_merge1, kernel = "linear",
+                 ranges = list(cost = c(0.001, 0.01, 0.1,
+                                        1, 5, 10, 100)))
+summary(tune.out)
+
+
+```
+
+
