@@ -63,6 +63,13 @@ data_merge1 <- data_merge1%>%
 # coef(lasso_model)
 
 ```
+```{r}
+tune.out1 <- tune(svm, q106 ~ ., data = data_merge1, kernel = "linear",
+                 ranges = list(cost = c(0.001, 0.01, 0.1,
+                                        1, 5, 10, 100)))
+summary(tune.out1)
+
+```
 
 ```{r}
 

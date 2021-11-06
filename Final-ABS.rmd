@@ -1,0 +1,139 @@
+---
+title: "Final-ABS"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Introduction: 
+
+After looking through the questions, we decided that in the time given, we should focus on building a model that can predict q106, which asks if the respondent thinks equal treatment of citizens by their government has gotten better or worse. We believe this question is important in order to compare how different respondents have viewed trends towards a "better" government system in their country. For instance, it's possible that a perception of positive trends is strongly correlated with a specific country or demographic group, indicating targeted improvements in equality. Alternatively, if perceptions of unequal treatment are strong correlated with certain groups, these groups may have been disproportionately "left out" of recent progress. 
+
+Overall, this analysis could provide grounds for further research into how different groups perceive recent developments around equality in East and Southeast Asia.
+
+
+##EDA:
+
+Before starting our exploratory data analysis, we subsetted the merged Wave 1 data to only include the most important variables as provided in the documentation. 
+
+Afterwards, we explored which variables had the most missing data and investigated whether data was randomly or non-randomly missing (see table 1 in the appendix). We discovered that there was no data for se004, q121, and q028 from Mainland China and no data on respondent age from Mongolia. 
+
+After visualizing the breakdown of responses to our variable of interest by age group (table 2), we determined that age was unlikely to be a significant predictor in our final model. Due to the missing data, we decided to drop se004, q121, q028, and se003a from our dataset.
+
+After visualizing our variable of interest (table 3), we determined that there were a good number of observations for each category of our response variable. This allowed us to proceed with putting together a multinomial lasso model. 
+
+##Proposed Methodology:
+What are the main method(s) that you are using and why? Be sure to choose methods that are statistically appropriate for the data. State any assumptions and why they are valid.
+
+##Analysis: 
+Analyze your data and provide evaluations. What do you find (include visualization if helpful).
+
+##Conclusion: 
+What can you conclude from your analysis and how is this useful regarding the motivating question.
+
+## Appendix
+```{r}
+merge <- merge %>% select(se002, se004, se005, se009, se003a, country, q007, q008, q009, q010, q006, q098, q128, q005, q027, q028, q105, q106, q121, q123, q127)
+#glimpse(merge)
+```
+### Table 1 - table of missing values
+```{r}
+n <- length(merge %>% colnames())
+missing_vec <- numeric(n)
+for (i in 1:n) {
+  nrow <- merge %>% select(colnames(merge)[i]) %>% filter(is.na((merge)[i])) %>% nrow()
+  missing_vec[i] <- nrow
+}
+missing_vec
+#merge %>% select(colnames(merge)[2]) %>% filter(is.na((merge)[2])) %>% nrow()
+```
+```{r, echo=TRUE}
+#data frame
+NA_table <- data.frame(colnames(merge), missing_vec)
+kable(NA_table, col.names = c("Variable", "Number of NA"), caption = "Table of NA values")
+```
+### Table 2- Table of country breakdown
+```{r, echo=TRUE}
+country_percs <- merge %>% count(country) %>% mutate(perc = round(n / sum(n) * 100, digits = 3))
+country_percs <- country_percs %>% arrange(perc) %>% select(-n)
+kable(country_percs, col.names = c("Country", "Percent of Respondents"), caption = "Survey Respondents: Breakdown by Country" )
+```
+###Graph 1- Visualize Q106
+```{r , echo=TRUE}
+#Visualize key response var
+ggplot(data = merge, mapping = aes(x = q106, fill = q106)) +
+  geom_bar() +
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) + labs(title = "Is everyone treated equally by the government?") +
+  xlab("Responses") +
+  ylab("Number of Responses") +
+  labs(fill="")
+```
+### Graph 2- Visualize Q106 by country
+```{r, echo=TRUE}
+#Visualize key response var by country
+ggplot(data = merge, mapping = aes(x = q106, fill = q106)) +
+  geom_bar() +
+  facet_wrap("country") +
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) + labs(title = "Q106: Response by Country") +
+  labs(fill = "") +
+  ylab("Number of responses") +
+  xlab("")
+```
+### Graph 3- Visualize Q106 by Gender
+```{r, echo=TRUE}
+merge_subg <- merge %>% drop_na(se002) %>%
+  arrange(se002)
+ggplot(data = merge_subg, mapping = aes(x = q106, fill = q106)) +
+  geom_bar() +
+  facet_wrap("se002") +
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) + labs(title = "Q106: Response by Gender") +
+  labs(fill = "") +
+  ylab("") +
+  xlab("")
+```
+### Graph 4- Vizualize Q106 by Income
+```{r, echo=TRUE}
+merge_subi <- merge %>% drop_na(se009) %>%
+  arrange(se009)
+ggplot(data = merge_subi, mapping = aes(x = q106, fill = q106)) +
+  geom_bar() +
+  facet_wrap("se009") +
+  theme(axis.text.x=element_blank(),
+      axis.ticks.x=element_blank()) + labs(title = "Q106: Response by Income Level") +
+  labs(fill = "") +
+  ylab("Number of responses") +
+  xlab("")
+```
+### Graph 5- age vs answer to Q106
+```{r, echo=TRUE}
+merge_sub <- merge %>% drop_na(se003a) %>%
+  mutate(se003a = as.numeric(se003a)) %>%
+  mutate(age_range = case_when(se003a <= 18 ~ "Under 18",
+                               se003a > 18 & se003a <= 25 ~ "18-25",
+                               se003a > 25 & se003a <= 50  ~ "25-50",
+                               se003a > 50 & se003a <= 75  ~ "50-75",
+                               se003a > 75 ~ "above 75")) %>%
+  arrange(age_range)
+merge_sub <- merge_sub %>% 
+  mutate(age_range = factor(age_range, levels = c("Under 18", "18-25", "25-50","50-75", .))) %>%
+  arrange(age_range)
+ggplot(data = merge_sub, mapping = aes(x = q106, fill = age_range)) +
+  geom_bar(position = "fill") +
+  theme(axis.ticks.x=element_blank(),
+        axis.text.x = element_text(angle = 25)) +
+  labs(title = "Is everyone treated equally by the government?", x= "Response", y= "Count")
+```
+
+
+```{r, echo=TRUE, message= FALSE}
+table <- merge %>% group_by(country) %>% count(q106) %>% summarize(percent = round(n/sum(n)*100, digits =3), 'Q106 Response' = q106)
+# table
+# table %>% colnames()
+newtble <- pivot_wider(table, names_from = country, values_from = percent)
+kable(newtble, caption = "Country Breakdown of Response to Q106")
+```
