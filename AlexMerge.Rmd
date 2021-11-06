@@ -64,10 +64,10 @@ data_merge1 <- data_merge1%>%
 
 ```
 ```{r}
-tune.out1 <- tune(svm, q106 ~ ., data = data_merge1, kernel = "linear",
-                 ranges = list(cost = c(0.001, 0.01, 0.1,
-                                        1, 5, 10, 100)))
-summary(tune.out1)
+# tune.out1 <- tune(svm, q106 ~ ., data = data_merge1, kernel = "linear",
+#                  ranges = list(cost = c(0.001, 0.01, 0.1,
+#                                         1, 5, 10, 100)))
+# summary(tune.out1)
 
 ```
 
@@ -85,7 +85,6 @@ data_merge1 <- data_merge1%>%
                            q106=="Somewhat better" ~ 1,
                            q106=="Much better than before" ~ 1,))
 x <- model.matrix(q106~.,data_merge1)[,-1]
-x
 y <- data_merge1$q106
 #Finding optimal lambda shrinkage value to reduce error through cross validation
 set.seed(123)
@@ -99,6 +98,13 @@ cv.lasso$lambda.min
 We decided to transform our response variable q106 into two different categories. "Much worse," "Somewhat worse," "Much the same," were encoded as 0, and "Somewhat better, "Much better than before" were encoded as 1. As a result, our goal is to predict if trends in the equal treatment of citizens has gotten worse/stayed the same, or gotten better. We decided to drop all NA's from the dataframe. We considered using KNN to impute missing values, but we thought the missing data may have a systematic pattern, as seen in the GRAPHHHHH, and the large amount of missing values were computationally expensive to fit given the number of dimensions. 
 
 We then decided to fit a logistic lasso regression in order to decrease the variance of our model and also perform variable selection. Shrinkage of the coefficients also may help with multicollinearity in the model. We used cross validation to find the optimal lambda shrinkage parameter, and used that as the lambda parameter in our final model. 
+
+
+Looking at our model, we see that certain levels of some predictors may have coefficients of 0, but for all predictors most if not all levels are nonzero and significant. We can tell that for example, a female is less likely to think that equal treatment of people by the government has gotten better. Countries Mainland China, Mongolia, and Thailand seem to have be more likely to think that equal treatment of people by the government has gotten better. Meanwhile, countries Hong Kong, Korea, Philippines, and Taiwan are less likely to think so. Interestingly enough, we found that compared to the 1st quintile of wealth (poorest), each other quintile of wealth is less likely to believe that equal treatment of people has gotten better. 
+
+
+
+
 
 
 
