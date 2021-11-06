@@ -36,13 +36,25 @@ After visualizing the breakdown of responses to our variable of interest by age 
 After visualizing our variable of interest (Graph 1), we determined that there were a good number of observations for each category of our response variable. This allowed us to proceed with putting together a multinomial lasso model. 
 
 ## Proposed Methodology:
+Our selected variables:
+se002(gender), se005(education), se009(income), country, q027(participation in last election), q105(everyone is free to say what they think)
+
+In building our model, we used various methods to narrow down a range of potentially strong and important predictor variables. 
+
+First off, we choose to include a few typical indicators of socio-economic status as predictor variables -- gender, education level, and income level. These _______.
+Although we considered adding age as a predictor, we found that there was significant missing data on age from Mongolia, and it was therefore compromised as a predictor variable. Our exploratory data analysis confirmed that age was likely not a significant predictor of responses to our question of interest, so we proceeded without age (see appendix).
+
+In addition, we added question q105 as a predictor, which asked whether survey respondents felt that free speech was getting better or worse in their country. We felt that this was potentially relevant to include, because perspectives on equality and free speech are tied to a survey respondent’s notions of rights and justice. There were no systematically missing observations from q105 and no obvious barriers to it being a predictor variable. 
+
+Finally, we included country because country is a key aspect of the response variable we are assessing. We are attempting to predict a survey respondent’s perspective on trends in their government’s equal treatment of citizens, so the respondent’s country is a key aspect to include. 
+
 
 We decided to transform our response variable q106 into two different categories. "Much worse," "Somewhat worse," "Much the same," were encoded as 0, and "Somewhat better, "Much better than before" were encoded as 1. As a result, our goal is to predict if trends in the equal treatment of citizens has gotten worse/stayed the same, or gotten better. We decided to drop all NA's from the dataframe. We considered using KNN to impute missing values, but we thought the missing data may have a systematic pattern, as seen in the Table 1, and the large amount of missing values were computationally expensive to fit given the number of dimensions. 
 
 We then decided to fit a logistic lasso regression in order to decrease the variance of our model and also perform variable selection. Shrinkage of the coefficients also may help with multicollinearity in the model. We used cross validation to find the optimal lambda shrinkage parameter, and used that as the lambda parameter in our final model. 
 
 ## Analysis: 
-Analyze your data and provide evaluations. What do you find (include visualization if helpful).
+
 ```{r, include=TRUE}
 data_merge1 <- merge%>%
    select(se002, se005, se009, country, q027, q105, q106)
@@ -69,6 +81,8 @@ lambda = cv.lasso$lambda.min)
 coef(lasso_model)
 cv.lasso$lambda.min
 ```
+
+Looking at our model, we see that certain levels of some predictors may have coefficients of 0, but for all predictors most if not all levels are nonzero and significant. We can tell that for example, a female is less likely to think that equal treatment of people by the government has gotten better. Countries Mainland China, Mongolia, and Thailand seem to have be more likely to think that equal treatment of people by the government has gotten better. Meanwhile, countries Hong Kong, Korea, Philippines, and Taiwan are less likely to think so. Interestingly enough, we found that compared to the 1st quintile of wealth (poorest), each other quintile of wealth is less likely to believe that equal treatment of people has gotten better. 
 
 ## Conclusion: 
 
